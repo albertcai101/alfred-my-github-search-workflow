@@ -8,6 +8,32 @@
 	<string>Productivity</string>
 	<key>connections</key>
 	<dict>
+		<key>50E582F7-76D0-487C-80FE-A5263B8395E1</key>
+		<array>
+			<dict>
+				<key>destinationuid</key>
+				<string>FD03FD75-DCFF-4A61-AC2A-68B249B93373</string>
+				<key>modifiers</key>
+				<integer>0</integer>
+				<key>modifiersubtext</key>
+				<string></string>
+				<key>vitoclose</key>
+				<false/>
+			</dict>
+		</array>
+		<key>54615906-5E31-43E3-AAC0-E6A0FDF80272</key>
+		<array>
+			<dict>
+				<key>destinationuid</key>
+				<string>FD03FD75-DCFF-4A61-AC2A-68B249B93373</string>
+				<key>modifiers</key>
+				<integer>0</integer>
+				<key>modifiersubtext</key>
+				<string></string>
+				<key>vitoclose</key>
+				<false/>
+			</dict>
+		</array>
 		<key>8987AD20-8E78-4106-9212-B84CB6537B08</key>
 		<array>
 			<dict>
@@ -20,12 +46,22 @@
 				<key>vitoclose</key>
 				<false/>
 			</dict>
+			<dict>
+				<key>destinationuid</key>
+				<string>50E582F7-76D0-487C-80FE-A5263B8395E1</string>
+				<key>modifiers</key>
+				<integer>1048576</integer>
+				<key>modifiersubtext</key>
+				<string></string>
+				<key>vitoclose</key>
+				<false/>
+			</dict>
 		</array>
 	</dict>
 	<key>createdby</key>
 	<string>Albert Cai</string>
 	<key>description</key>
-	<string>Search all of your personal, starred, and organization's repos.</string>
+	<string>Search all of your personal, starred, and organization's repos</string>
 	<key>disabled</key>
 	<false/>
 	<key>name</key>
@@ -36,15 +72,15 @@
 			<key>config</key>
 			<dict>
 				<key>alfredfiltersresults</key>
-				<false/>
+				<true/>
 				<key>alfredfiltersresultsmatchmode</key>
-				<integer>0</integer>
+				<integer>3</integer>
 				<key>argumenttreatemptyqueryasnil</key>
 				<true/>
 				<key>argumenttrimmode</key>
 				<integer>0</integer>
 				<key>argumenttype</key>
-				<integer>0</integer>
+				<integer>1</integer>
 				<key>escaping</key>
 				<integer>102</integer>
 				<key>keyword</key>
@@ -62,15 +98,10 @@
 				<key>script</key>
 				<string>#!/bin/bash
 
-# Fetch GitHub username and token from workflow environment variables
+# Fetch workflow configuration variables
 GITHUB_USERNAME="$username"
 GITHUB_TOKEN="$token"
-
-# Ensure that the token and username are set
-if [ -z "$GITHUB_USERNAME" ] || [ -z "$GITHUB_TOKEN" ]; then
-  echo "Please set your GitHub username and token in the workflow configuration."
-  exit 1
-fi
+CACHE_DURATION="$cacheDuration"
 
 # Search query from Alfred input
 QUERY="$1"
@@ -102,29 +133,36 @@ ALL_REPOS=$(echo -e "$USER_REPOS\n$STARRED_REPOS\n$ORG_REPOS" | sort -u)
 # Filter results based on query
 FILTERED_REPOS=$(echo "$ALL_REPOS" | grep -i "$QUERY")
 
-# Generate Alfred Script Filter XML output
-echo "&lt;?xml version='1.0'?&gt;"
-echo "&lt;items&gt;"
+# Generate Alfred JSON output
+echo "{
+    \"cache\": {
+        \"seconds\": $CACHE_DURATION
+    },
+    \"items\":["
 
-# Check if there are any filtered results
-if [ -z "$FILTERED_REPOS" ]; then
-  echo "&lt;item&gt;"
-  echo "&lt;title&gt;🚫 No results&lt;/title&gt;"
-  echo "&lt;subtitle&gt;No results found for '$QUERY'&lt;/subtitle&gt;"
-  echo "&lt;valid&gt;false&lt;/valid&gt;"
-  echo "&lt;/item&gt;"
-else
-  while IFS= read -r REPO; do
-    if [ -n "$REPO" ]; then
-      echo "&lt;item arg=\"https://github.com/$REPO\"&gt;"
-      echo "&lt;title&gt;$REPO&lt;/title&gt;"
-      echo "&lt;subtitle&gt;Open in GitHub&lt;/subtitle&gt;"
-      echo "&lt;/item&gt;"
+first_item=true
+while IFS= read -r REPO; do
+  if [ -n "$REPO" ]; then
+    if [ "$first_item" = true ]; then
+      first_item=false
+    else
+      echo ","
     fi
-  done &lt;&lt;&lt; "$FILTERED_REPOS"
-fi
+    echo "{
+      \"title\": \"$REPO\",
+      \"subtitle\": \"Open in GitHub\",
+      \"arg\": \"https://github.com/$REPO\",
+      \"mods\": {
+        \"cmd\": {
+          \"subtitle\": \"⌘: Copy URL to clipboard\",
+          \"arg\": \"https://github.com/$REPO\"
+        }
+      }
+    }"
+  fi
+done &lt;&lt;&lt; "$FILTERED_REPOS"
 
-echo "&lt;/items&gt;"</string>
+echo "]}"</string>
 				<key>scriptargtype</key>
 				<integer>1</integer>
 				<key>scriptfile</key>
@@ -166,6 +204,38 @@ echo "&lt;/items&gt;"</string>
 			<key>version</key>
 			<integer>1</integer>
 		</dict>
+		<dict>
+			<key>config</key>
+			<dict>
+				<key>unstackview</key>
+				<false/>
+			</dict>
+			<key>type</key>
+			<string>alfred.workflow.utility.hidealfred</string>
+			<key>uid</key>
+			<string>FD03FD75-DCFF-4A61-AC2A-68B249B93373</string>
+			<key>version</key>
+			<integer>1</integer>
+		</dict>
+		<dict>
+			<key>config</key>
+			<dict>
+				<key>autopaste</key>
+				<false/>
+				<key>clipboardtext</key>
+				<string>{query}</string>
+				<key>ignoredynamicplaceholders</key>
+				<false/>
+				<key>transient</key>
+				<false/>
+			</dict>
+			<key>type</key>
+			<string>alfred.workflow.output.clipboard</string>
+			<key>uid</key>
+			<string>50E582F7-76D0-487C-80FE-A5263B8395E1</string>
+			<key>version</key>
+			<integer>3</integer>
+		</dict>
 	</array>
 	<key>readme</key>
 	<string># My Github Search - An Alfred Workflow
@@ -173,6 +243,7 @@ Search all of your personal, starred, and organization repos in [Alfred](https:/
 
 ## Dependencies
 Alfred 5 with [PowerPack](https://www.alfredapp.com/powerpack/).
+Also, need `jq`, see install at [their docs](https://jqlang.github.io/jq/download/).
 Nothing else, everything is in a single bash script :)
 
 ## Usage
@@ -190,19 +261,37 @@ Note that I personally use a classic token so I can have no expiration date.
 You can also customize the `ghs` command to any command of your choice in the same pane.</string>
 	<key>uidata</key>
 	<dict>
+		<key>50E582F7-76D0-487C-80FE-A5263B8395E1</key>
+		<dict>
+			<key>colorindex</key>
+			<integer>2</integer>
+			<key>xpos</key>
+			<real>535</real>
+			<key>ypos</key>
+			<real>390</real>
+		</dict>
 		<key>54615906-5E31-43E3-AAC0-E6A0FDF80272</key>
 		<dict>
 			<key>xpos</key>
-			<real>400</real>
+			<real>530</real>
 			<key>ypos</key>
-			<real>265</real>
+			<real>270</real>
 		</dict>
 		<key>8987AD20-8E78-4106-9212-B84CB6537B08</key>
 		<dict>
 			<key>xpos</key>
-			<real>200</real>
+			<real>195</real>
 			<key>ypos</key>
 			<real>260</real>
+		</dict>
+		<key>FD03FD75-DCFF-4A61-AC2A-68B249B93373</key>
+		<dict>
+			<key>colorindex</key>
+			<integer>12</integer>
+			<key>xpos</key>
+			<real>755</real>
+			<key>ypos</key>
+			<real>320</real>
 		</dict>
 	</dict>
 	<key>userconfigurationconfig</key>
@@ -227,6 +316,31 @@ You can also customize the `ghs` command to any command of your choice in the sa
 			<string>textfield</string>
 			<key>variable</key>
 			<string>fullsearch</string>
+		</dict>
+		<dict>
+			<key>config</key>
+			<dict>
+				<key>defaultvalue</key>
+				<integer>10</integer>
+				<key>markercount</key>
+				<integer>12</integer>
+				<key>maxvalue</key>
+				<integer>86400</integer>
+				<key>minvalue</key>
+				<integer>0</integer>
+				<key>onlystoponmarkers</key>
+				<false/>
+				<key>showmarkers</key>
+				<true/>
+			</dict>
+			<key>description</key>
+			<string>The workflow will run faster but update to new repos slower.</string>
+			<key>label</key>
+			<string>Cache Duration (seconds)</string>
+			<key>type</key>
+			<string>slider</string>
+			<key>variable</key>
+			<string>cacheDuration</string>
 		</dict>
 		<dict>
 			<key>config</key>
@@ -274,7 +388,7 @@ You can also customize the `ghs` command to any command of your choice in the sa
 	<key>variablesdontexport</key>
 	<array/>
 	<key>version</key>
-	<string>1.0.0</string>
+	<string>1.0.1</string>
 	<key>webaddress</key>
 	<string>https://github.com/albertcai101/alfred-my-github-search-workflow</string>
 </dict>
