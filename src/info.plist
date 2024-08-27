@@ -1,0 +1,281 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>bundleid</key>
+	<string>com.albertcai101.mygithubsearch</string>
+	<key>category</key>
+	<string>Productivity</string>
+	<key>connections</key>
+	<dict>
+		<key>8987AD20-8E78-4106-9212-B84CB6537B08</key>
+		<array>
+			<dict>
+				<key>destinationuid</key>
+				<string>54615906-5E31-43E3-AAC0-E6A0FDF80272</string>
+				<key>modifiers</key>
+				<integer>0</integer>
+				<key>modifiersubtext</key>
+				<string></string>
+				<key>vitoclose</key>
+				<false/>
+			</dict>
+		</array>
+	</dict>
+	<key>createdby</key>
+	<string>Albert Cai</string>
+	<key>description</key>
+	<string>Search all of your personal, starred, and organization's repos.</string>
+	<key>disabled</key>
+	<false/>
+	<key>name</key>
+	<string>My GitHub Search</string>
+	<key>objects</key>
+	<array>
+		<dict>
+			<key>config</key>
+			<dict>
+				<key>alfredfiltersresults</key>
+				<false/>
+				<key>alfredfiltersresultsmatchmode</key>
+				<integer>0</integer>
+				<key>argumenttreatemptyqueryasnil</key>
+				<true/>
+				<key>argumenttrimmode</key>
+				<integer>0</integer>
+				<key>argumenttype</key>
+				<integer>0</integer>
+				<key>escaping</key>
+				<integer>102</integer>
+				<key>keyword</key>
+				<string>{var:fullsearch}</string>
+				<key>queuedelaycustom</key>
+				<integer>3</integer>
+				<key>queuedelayimmediatelyinitially</key>
+				<false/>
+				<key>queuedelaymode</key>
+				<integer>1</integer>
+				<key>queuemode</key>
+				<integer>2</integer>
+				<key>runningsubtext</key>
+				<string>cooking up repos...</string>
+				<key>script</key>
+				<string>#!/bin/bash
+
+# Fetch GitHub username and token from workflow environment variables
+GITHUB_USERNAME="$username"
+GITHUB_TOKEN="$token"
+
+# Ensure that the token and username are set
+if [ -z "$GITHUB_USERNAME" ] || [ -z "$GITHUB_TOKEN" ]; then
+  echo "Please set your GitHub username and token in the workflow configuration."
+  exit 1
+fi
+
+# Search query from Alfred input
+QUERY="$1"
+
+# Headers
+HEADERS=(
+  -H "Accept: application/vnd.github+json"
+  -H "Authorization: Bearer $GITHUB_TOKEN"
+  -H "X-GitHub-Api-Version: 2022-11-28"
+)
+
+# Fetch user repositories
+USER_REPOS=$(curl -s "${HEADERS[@]}" "https://api.github.com/users/$GITHUB_USERNAME/repos" | jq -r '.[].full_name')
+
+# Fetch starred repositories
+STARRED_REPOS=$(curl -s "${HEADERS[@]}" "https://api.github.com/user/starred" | jq -r '.[].full_name')
+
+# Fetch organization repositories
+ORG_REPOS=""
+ORGS=$(curl -s "${HEADERS[@]}" "https://api.github.com/users/$GITHUB_USERNAME/orgs" | jq -r '.[].login')
+for ORG in $ORGS; do
+  ORG_REPOS_LIST=$(curl -s "${HEADERS[@]}" "https://api.github.com/orgs/$ORG/repos" | jq -r '.[].full_name')
+  ORG_REPOS="$ORG_REPOS"$'\n'"$ORG_REPOS_LIST"
+done
+
+# Combine all repositories into a unique set to remove duplicates
+ALL_REPOS=$(echo -e "$USER_REPOS\n$STARRED_REPOS\n$ORG_REPOS" | sort -u)
+
+# Filter results based on query
+FILTERED_REPOS=$(echo "$ALL_REPOS" | grep -i "$QUERY")
+
+# Generate Alfred Script Filter XML output
+echo "&lt;?xml version='1.0'?&gt;"
+echo "&lt;items&gt;"
+
+# Check if there are any filtered results
+if [ -z "$FILTERED_REPOS" ]; then
+  echo "&lt;item&gt;"
+  echo "&lt;title&gt;🚫 No results&lt;/title&gt;"
+  echo "&lt;subtitle&gt;No results found for '$QUERY'&lt;/subtitle&gt;"
+  echo "&lt;valid&gt;false&lt;/valid&gt;"
+  echo "&lt;/item&gt;"
+else
+  while IFS= read -r REPO; do
+    if [ -n "$REPO" ]; then
+      echo "&lt;item arg=\"https://github.com/$REPO\"&gt;"
+      echo "&lt;title&gt;$REPO&lt;/title&gt;"
+      echo "&lt;subtitle&gt;Open in GitHub&lt;/subtitle&gt;"
+      echo "&lt;/item&gt;"
+    fi
+  done &lt;&lt;&lt; "$FILTERED_REPOS"
+fi
+
+echo "&lt;/items&gt;"</string>
+				<key>scriptargtype</key>
+				<integer>1</integer>
+				<key>scriptfile</key>
+				<string></string>
+				<key>subtext</key>
+				<string></string>
+				<key>title</key>
+				<string>Search all personally affiliated repos.</string>
+				<key>type</key>
+				<integer>0</integer>
+				<key>withspace</key>
+				<true/>
+			</dict>
+			<key>type</key>
+			<string>alfred.workflow.input.scriptfilter</string>
+			<key>uid</key>
+			<string>8987AD20-8E78-4106-9212-B84CB6537B08</string>
+			<key>version</key>
+			<integer>3</integer>
+		</dict>
+		<dict>
+			<key>config</key>
+			<dict>
+				<key>browser</key>
+				<string></string>
+				<key>skipqueryencode</key>
+				<false/>
+				<key>skipvarencode</key>
+				<false/>
+				<key>spaces</key>
+				<string></string>
+				<key>url</key>
+				<string></string>
+			</dict>
+			<key>type</key>
+			<string>alfred.workflow.action.openurl</string>
+			<key>uid</key>
+			<string>54615906-5E31-43E3-AAC0-E6A0FDF80272</string>
+			<key>version</key>
+			<integer>1</integer>
+		</dict>
+	</array>
+	<key>readme</key>
+	<string># My Github Search - An Alfred Workflow
+Search all of your personal, starred, and organization repos in [Alfred](https://www.alfredapp.com/), a powerful MacOS launcher application. It uses the [GitHub REST API Endpoints](https://docs.github.com/en/rest/repos?apiVersion=2022-11-28).
+
+## Dependencies
+Alfred 5 with [PowerPack](https://www.alfredapp.com/powerpack/).
+Nothing else, everything is in a single bash script :)
+
+## Usage
+`ghs {query}` will give you a list of all your personal, starred, and organization GitHub repositories. `⏎` on a selected result will open the repository in your default browser.
+
+## Setup
+After installing the Alfred workflow (download under Releases), click Configure Workflow... in Alfred. In the username text field, enter your GitHub username. 
+In the token text field, generate a "Personal access token" at https://github.com/settings/tokens. You will need to check the following scopes:
+- read:org
+- repo
+- user
+
+Note that I personally use a classic token so I can have no expiration date.
+
+You can also customize the `ghs` command to any command of your choice in the same pane.</string>
+	<key>uidata</key>
+	<dict>
+		<key>54615906-5E31-43E3-AAC0-E6A0FDF80272</key>
+		<dict>
+			<key>xpos</key>
+			<real>400</real>
+			<key>ypos</key>
+			<real>265</real>
+		</dict>
+		<key>8987AD20-8E78-4106-9212-B84CB6537B08</key>
+		<dict>
+			<key>xpos</key>
+			<real>200</real>
+			<key>ypos</key>
+			<real>260</real>
+		</dict>
+	</dict>
+	<key>userconfigurationconfig</key>
+	<array>
+		<dict>
+			<key>config</key>
+			<dict>
+				<key>default</key>
+				<string>ghs</string>
+				<key>placeholder</key>
+				<string></string>
+				<key>required</key>
+				<false/>
+				<key>trim</key>
+				<true/>
+			</dict>
+			<key>description</key>
+			<string>search all your personal repos, organization repos, and starred repos</string>
+			<key>label</key>
+			<string>Full GitHub Search</string>
+			<key>type</key>
+			<string>textfield</string>
+			<key>variable</key>
+			<string>fullsearch</string>
+		</dict>
+		<dict>
+			<key>config</key>
+			<dict>
+				<key>default</key>
+				<string></string>
+				<key>placeholder</key>
+				<string></string>
+				<key>required</key>
+				<true/>
+				<key>trim</key>
+				<true/>
+			</dict>
+			<key>description</key>
+			<string>For example, albertcai101 in "https://github.com/albertcai101"</string>
+			<key>label</key>
+			<string>Github Username</string>
+			<key>type</key>
+			<string>textfield</string>
+			<key>variable</key>
+			<string>username</string>
+		</dict>
+		<dict>
+			<key>config</key>
+			<dict>
+				<key>default</key>
+				<string></string>
+				<key>placeholder</key>
+				<string></string>
+				<key>required</key>
+				<true/>
+				<key>trim</key>
+				<true/>
+			</dict>
+			<key>description</key>
+			<string>Create one at github.com/settings/tokens</string>
+			<key>label</key>
+			<string>Personal Access Token</string>
+			<key>type</key>
+			<string>textfield</string>
+			<key>variable</key>
+			<string>token</string>
+		</dict>
+	</array>
+	<key>variablesdontexport</key>
+	<array/>
+	<key>version</key>
+	<string>1.0.0</string>
+	<key>webaddress</key>
+	<string>https://github.com/albertcai101/alfred-my-github-search-workflow</string>
+</dict>
+</plist>
