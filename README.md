@@ -8,7 +8,9 @@ Then, follow the [setup guide](#setup).
 
 ## Dependencies
 Alfred 5 with [PowerPack](https://www.alfredapp.com/powerpack/).
+
 `jq`, which you can download at [their site](https://jqlang.github.io/jq/download/).
+
 Nothing else, everything is in a single bash script :)
 
 ## Usage
