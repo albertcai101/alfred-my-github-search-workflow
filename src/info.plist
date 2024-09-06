@@ -114,7 +114,7 @@ HEADERS=(
 )
 
 # Fetch user repositories
-USER_REPOS=$(curl -s "${HEADERS[@]}" "https://api.github.com/users/$GITHUB_USERNAME/repos" | jq -r '.[].full_name')
+USER_REPOS=$(curl -s "${HEADERS[@]}" "https://api.github.com/user/repos" | jq -r '.[].full_name')
 
 # Fetch starred repositories
 STARRED_REPOS=$(curl -s "${HEADERS[@]}" "https://api.github.com/user/starred" | jq -r '.[].full_name')
@@ -136,7 +136,8 @@ FILTERED_REPOS=$(echo "$ALL_REPOS" | grep -i "$QUERY")
 # Generate Alfred JSON output
 echo "{
     \"cache\": {
-        \"seconds\": $CACHE_DURATION
+        \"seconds\": $CACHE_DURATION,
+		\"loosereload\": true
     },
     \"items\":["
 
@@ -388,7 +389,7 @@ You can also customize the `ghs` command to any command of your choice in the sa
 	<key>variablesdontexport</key>
 	<array/>
 	<key>version</key>
-	<string>1.0.1</string>
+	<string>1.0.2</string>
 	<key>webaddress</key>
 	<string>https://github.com/albertcai101/alfred-my-github-search-workflow</string>
 </dict>
